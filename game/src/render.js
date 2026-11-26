@@ -113,8 +113,10 @@ void main() {
   vec3 col = mix(hor, mid, smoothstep(0.42, 0.62, vUv.y));
   col = mix(col, zen, smoothstep(0.62, 1.0, vUv.y));
   float d = distance(vUv * vec2(1.6, 1.0), uSunPos * vec2(1.6, 1.0));
-  col += vec3(1.0, 0.85, 0.55) * smoothstep(0.22, 0.0, d) * 0.55;
-  col += vec3(1.0, 0.95, 0.75) * smoothstep(0.07, 0.0, d);
+  // Soft sun: a wide faint halo plus a smaller warm core. The old full
+  // white disc read as a flat sticker pasted on the sky.
+  col += vec3(1.0, 0.8, 0.45) * smoothstep(0.34, 0.0, d) * 0.30;
+  col += vec3(1.0, 0.9, 0.6) * smoothstep(0.05, 0.0, d) * 0.75;
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -317,11 +319,12 @@ function norm3(v) {
 }
 
 // Chase camera: behind and above the plane, smoothed, rolling a little with
-// the plane so turns feel banked but never disorienting.
-export function chaseCamera(plane, dt, cam) {
+// the plane so turns feel banked but never disorienting. Kept close (16 m)
+// so the plane reads clearly at 1280 px wide instead of a speck.
+export function chaseCamera(plane, dt, cam, lookAhead = 60) {
   const f = forwardFrom(plane);
-  const back = 24;
-  const up = 7.5;
+  const back = 16;
+  const up = 6;
   const tx = plane.x - f[0] * back;
   const ty = plane.y - f[1] * back + up;
   const tz = plane.z - f[2] * back;
@@ -330,7 +333,7 @@ export function chaseCamera(plane, dt, cam) {
   cam.y += (ty - cam.y) * k;
   cam.z += (tz - cam.z) * k;
   // look ahead of the plane
-  const look = [plane.x + f[0] * 60, plane.y + f[1] * 60, plane.z + f[2] * 60];
+  const look = [plane.x + f[0] * lookAhead, plane.y + f[1] * lookAhead, plane.z + f[2] * lookAhead];
   // up vector rolled with the plane (half the bank)
   const roll = plane.roll * 0.55;
   const upVec = [Math.sin(roll), Math.cos(roll), 0];

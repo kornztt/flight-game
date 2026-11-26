@@ -86,6 +86,12 @@ html, body {
 }
 .left-panel { margin-left: 42px; max-width: 520px; }
 .center-panel { margin: 0 auto; max-width: 560px; text-align: center; }
+/* End screen sits on the left, compact, so the landed plane and the
+   runway stay visible in the middle of the frame instead of hiding
+   behind a centred panel. */
+#end-screen .panel { margin: 0 0 0 42px; max-width: 470px; text-align: left; padding: 20px 24px; }
+#end-screen h2 { font-size: 36px; }
+#end-screen #end-lines { font-size: 15px; line-height: 1.7; }
 .panel h1 {
   margin: 0 0 8px; font-size: 58px; line-height: 0.95; letter-spacing: 3px;
   color: #fff; text-shadow: 0 0 24px rgba(90, 180, 255, 0.75), 0 3px 0 rgba(0,0,0,.4);

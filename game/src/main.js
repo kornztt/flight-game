@@ -35,6 +35,8 @@ const game = {
   result: null, // {title, lines[]} shown on the end overlay
   warnBeepAt: 0,
   cam: { x: 0, y: 60, z: 300 },
+  camLookAhead: 60, // metres ahead the chase camera looks (title shot: 22)
+  shotFreeze: false, // staged screenshots: hold the sim still so HUD numbers stay exact
   clouds: [],
   shotMode: null,
 };
@@ -366,7 +368,7 @@ function renderFrame(dt) {
   const h = canvas.clientHeight || window.innerHeight;
   if (canvas.width !== w || canvas.height !== h) renderer.resize(w, h);
   const p = game.plane;
-  const cam = chaseCamera(p, dt, game.cam);
+  const cam = chaseCamera(p, dt, game.cam, game.camLookAhead || 60);
   const proj = matPerspective((62 * Math.PI) / 180, w / h, 0.5, 6000);
   const view = matLookAt(cam.eye, cam.look, cam.up);
   viewProj = matMultiply(proj, view);
@@ -401,7 +403,9 @@ function loop(now) {
   const dt = Math.min(0.1, (now - lastT) / 1000 || 0.016);
   lastT = now;
   if (game.state === 'playing') {
-    stepGame(dt);
+    // Staged screenshots freeze the sim: the plane, fuel, time and score
+    // stay exactly at their staged values instead of drifting for 3 s.
+    if (!game.shotFreeze) stepGame(dt);
     for (const c of game.clouds) {
       c.x += c.drift * dt;
       if (c.x > 2100) c.x = -2100;
@@ -562,19 +566,38 @@ game.debug = {
 
 // Snap the chase camera behind the plane at once (staged screenshots and
 // teleports would otherwise show the camera still flying in from far away).
+// Must match chaseCamera's back/up so the first frame is already framed.
 function snapCamera() {
   const p = game.plane;
   const f = forwardVector(p);
   game.cam = {
-    x: p.x - f[0] * 24,
-    y: p.y - f[1] * 24 + 7.5,
-    z: p.z - f[2] * 24,
+    x: p.x - f[0] * 16,
+    y: p.y - f[1] * 16 + 6,
+    z: p.z - f[2] * 16,
   };
+}
+
+// startMission fires a toast ("throttle up...") that is still fading out
+// when the shutter fires 3 s later; kill it so staged shots have no
+// ghost text over the scene.
+function clearToast() {
+  const t = document.getElementById('toast');
+  t.classList.remove('show');
+  t.textContent = '';
 }
 
 // --- staged screenshots ------------------------------------------------------------------
 // ?shot=title | cruise | landing | win — deterministic states of the same
 // game, so the screenshots are real renders of the game code.
+// One continuous flight, so the four frames tell one story and the numbers
+// add up (RING RUN, 10 rings, 5:00, fuel 100):
+//   title   — on the runway, before takeoff
+//   cruise  — 18 s in: 2/10 rings, 225 pts (100+125 combo), fuel 95, 4:42 left
+//   landing — 200 s in: 10/10 rings, 2125 pts (full combo 100..325), fuel 46, 1:40 left
+//   win     — touchdown + rollout (~17 s later): fuel 43, 1:23 left,
+//             final 2677 = 2125 + 300 landing + 86 fuel (43x2) + 166 time (83x2)
+// The sim is frozen during cruise/landing shots: without the freeze the
+// autopilot flies 3 s before the shutter and the HUD drifts off the story.
 function applyShot() {
   const q = new URLSearchParams(location.search);
   const shot = q.get('shot');
@@ -582,20 +605,25 @@ function applyShot() {
   game.shotMode = shot;
   if (shot === 'title') {
     game.state = 'title';
+    // Look closer to the plane so it sits near the middle of the frame
+    // instead of low on the runway.
+    game.camLookAhead = 22;
     snapCamera();
     showOnly('title');
     return;
   }
   if (shot === 'cruise') {
     startMission('ringrun');
+    clearToast();
     const p = game.plane;
-    // 350 m before ring 3, nose on it, so the gold hoop fills the frame
-    // even after the autopilot flies toward it for a few seconds.
-    p.x = 372;
-    p.y = 230;
-    p.z = -1327;
+    // 130 m before ring 3 (620, 230, -1080), on the ring's normal axis
+    // (toward ring 4), so the gold hoop faces the camera full-on instead
+    // of edge-on; frozen, so it stays 130 m out.
+    p.x = 528;
+    p.y = 217;
+    p.z = -1172;
     p.heading = 2.36;
-    p.pitch = 0.02;
+    p.pitch = 0.05;
     p.speed = 86;
     p.throttle = 0.72;
     p.onGround = false;
@@ -603,20 +631,28 @@ function applyShot() {
     game.rings[1].passed = true;
     game.ringsPassed = 2;
     game.score = 225;
+    game.fuel = 95;
+    game.timeLeft = 282;
     game.autopilot = true;
     game.autopilotMode = 'ring';
+    game.shotFreeze = true;
     snapCamera();
     return;
   }
   if (shot === 'landing') {
     startMission('ringrun');
+    clearToast();
     game.rings.forEach((r) => { r.passed = true; });
     game.ringsPassed = game.ringTotal;
-    game.score = 1180;
+    game.score = 2125;
+    game.fuel = 46;
+    game.timeLeft = 100;
     const p = game.plane;
+    // Short final: 380 m out, 25 m above the runway, threshold filling
+    // the frame instead of a distant strip in empty grass.
     p.x = 14;
-    p.y = 82;
-    p.z = 700;
+    p.y = 55;
+    p.z = 380;
     p.heading = 0;
     p.pitch = -0.07;
     p.speed = 56;
@@ -626,16 +662,18 @@ function applyShot() {
     p.flaps = true;
     game.autopilot = true;
     game.autopilotMode = 'land';
+    game.shotFreeze = true;
     snapCamera();
     return;
   }
   if (shot === 'win') {
     startMission('ringrun');
+    clearToast();
     game.rings.forEach((r) => { r.passed = true; });
     game.ringsPassed = game.ringTotal;
-    game.score = 1840;
-    game.fuel = 41;
-    game.timeLeft = 96;
+    game.score = 2677;
+    game.fuel = 43;
+    game.timeLeft = 83;
     const p = game.plane;
     p.x = 0;
     p.y = WORLD.runwayAlt + 1.2;
@@ -647,8 +685,8 @@ function applyShot() {
     game.state = 'won';
     snapCamera();
     setEndScreen('MISSION COMPLETE', [
-      'Final score 1840',
-      'Landing +300 &nbsp; Fuel +82 &nbsp; Time +192',
+      'Final score 2677',
+      'Landing +300 &nbsp; Fuel +86 &nbsp; Time +166',
       'Rings 10/10 — RING RUN',
       'Press R to fly again.',
     ], true);
