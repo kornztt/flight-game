@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SKYLINE RUNNER — a flight game</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<canvas id="gl" aria-label="Skyline Runner: a 3D flight game. Fly the gold rings, then land on the runway."></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud">
+  <div class="hud-top-left">
+    <div class="gauge-box">
+      <div class="gauge-label">ALTITUDE</div>
+      <div class="gauge-value"><span id="alt">0000</span><span class="unit"> m</span></div>
+      <div class="gauge-sub">AGL · RUNWAY 30 m</div>
+    </div>
+    <div class="gauge-box">
+      <div class="gauge-label">AIRSPEED</div>
+      <div class="gauge-value"><span id="spd">000</span><span class="unit"> km/h</span></div>
+      <div class="gauge-sub">STALL 150 km/h</div>
+    </div>
+    <div class="gauge-box">
+      <div class="gauge-label">HEADING</div>
+      <div class="gauge-value"><span id="hdg">000°</span></div>
+      <div class="gauge-sub">MAGNETIC</div>
+    </div>
+  </div>
+
+  <div class="hud-top-center">
+    <div id="mission">RING RUN</div>
+    <canvas id="compass" width="230" height="52"></canvas>
+    <div id="target">NEXT RING 1 — 520 m</div>
+  </div>
+
+  <div class="hud-top-right">
+    <div class="score-box">
+      <div class="gauge-label">SCORE</div>
+      <div class="score-value" id="score">0</div>
+      <div id="combo"></div>
+    </div>
+    <div class="score-box">
+      <div class="gauge-label">RINGS</div>
+      <div class="score-value" id="rings">0 / 10</div>
+    </div>
+    <div class="score-box">
+      <div class="gauge-label">FUEL <span id="fuelText">100%</span></div>
+      <div class="bar"><div id="fuelFill" class="fill" style="width:100%"></div></div>
+    </div>
+    <div class="score-box">
+      <div class="gauge-label">TIME</div>
+      <div class="score-value" id="time">5:00</div>
+    </div>
+  </div>
+
+  <div class="hud-bottom-left">
+    <canvas id="attitude" width="140" height="140"></canvas>
+    <div class="thr-col">
+      <div class="gauge-label">THROTTLE</div>
+      <div class="thr-bar"><div id="thrFill"></div></div>
+      <div class="switches">
+        <span id="gear" class="on">GEAR DOWN</span>
+        <span id="flaps" class="off">FLAPS —</span>
+      </div>
+      <div id="wind">WIND 270° / 8 KT</div>
+    </div>
+  </div>
+
+  <div class="hud-bottom-right">
+    <div class="gauge-label">MAP — VALLEY · RIVER · TOWN</div>
+    <canvas id="minimap" width="190" height="190"></canvas>
+  </div>
+
+  <div id="warn"></div>
+  <div id="toast"></div>
+</div>
+
+<!-- ============ TITLE ============ -->
+<div id="title-screen" class="overlay">
+  <div class="panel left-panel">
+    <h1>SKYLINE<br>RUNNER</h1>
+    <p class="tagline">Fly the gold rings over the valley.<br>Land on runway 36 to win.</p>
+    <div class="missions">
+      <label><input type="radio" name="mission" value="ringrun" checked> <b>RING RUN</b> — 10 rings, 5:00</label>
+      <label><input type="radio" name="mission" value="timetrial"> <b>TIME TRIAL</b> — 8 rings, 2:45</label>
+      <label><input type="radio" name="mission" value="landing"> <b>LANDING DRILL</b> — one clean touchdown</label>
+    </div>
+    <button data-mission="ringrun" class="big-btn">TAKE OFF — RING RUN</button>
+    <button data-mission="timetrial" class="big-btn alt">TIME TRIAL</button>
+    <button data-mission="landing" class="big-btn alt">LANDING DRILL</button>
+    <div class="hint">or press Enter — the selected mission starts</div>
+    <div id="controls-list" class="controls"></div>
+    <div class="fine">A wholly original game. No real aircraft, places or games are named.</div>
+  </div>
+</div>
+
+<!-- ============ PAUSE ============ -->
+<div id="pause-screen" class="overlay hidden">
+  <div class="panel center-panel">
+    <h2>PAUSED</h2>
+    <p>Take a breath. The valley will wait.</p>
+    <button id="resume-btn" class="big-btn">RESUME</button>
+    <button id="restart-btn" class="big-btn alt">RESTART MISSION</button>
+    <button id="quit-btn" class="big-btn alt">QUIT TO TITLE</button>
+  </div>
+</div>
+
+<!-- ============ END ============ -->
+<div id="end-screen" class="overlay hidden">
+  <div class="panel center-panel">
+    <h2 id="end-title">MISSION COMPLETE</h2>
+    <div id="end-lines"></div>
+    <button id="end-restart" class="big-btn">FLY AGAIN (R)</button>
+    <button id="end-title-btn" class="big-btn alt">TITLE SCREEN</button>
+  </div>
+</div>
+
+<div id="fatal"></div>
+<p id="status" role="status" aria-live="polite"></p>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
