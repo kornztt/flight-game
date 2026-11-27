@@ -319,12 +319,14 @@ function norm3(v) {
 }
 
 // Chase camera: behind and above the plane, smoothed, rolling a little with
-// the plane so turns feel banked but never disorienting. Kept close (16 m)
-// so the plane reads clearly at 1280 px wide instead of a speck.
+// the plane so turns feel banked but never disorienting. 20 m back: the
+// plane reads clearly (~300 px) without swallowing the valley below it —
+// at 16 m the cruise shot hid the lake and most of the foreground terrain
+// behind the airframe (round 2 dropped after the 16 m fix).
 export function chaseCamera(plane, dt, cam, lookAhead = 60) {
   const f = forwardFrom(plane);
-  const back = 16;
-  const up = 6;
+  const back = 20;
+  const up = 7;
   const tx = plane.x - f[0] * back;
   const ty = plane.y - f[1] * back + up;
   const tz = plane.z - f[2] * back;

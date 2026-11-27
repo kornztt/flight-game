@@ -571,9 +571,9 @@ function snapCamera() {
   const p = game.plane;
   const f = forwardVector(p);
   game.cam = {
-    x: p.x - f[0] * 16,
-    y: p.y - f[1] * 16 + 6,
-    z: p.z - f[2] * 16,
+    x: p.x - f[0] * 20,
+    y: p.y - f[1] * 20 + 7,
+    z: p.z - f[2] * 20,
   };
 }
 
